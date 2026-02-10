@@ -2,3 +2,5 @@ models
 venv
 .env
 .vscode
+training/football-players-detection-1
+training/yolo8x.pt

@@ -10,3 +10,5 @@ supervision>=0.18.0    # Roboflow's library. Contains a pre-built ByteTrack impl
                        # WHY: Writing ByteTrack from scratch is error-prone. This is optimized.
 
 PyYAML>=6.0            # For parsing the config.yaml file
+
+roboflow
