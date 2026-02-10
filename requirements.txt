@@ -8,3 +8,5 @@ opencv-python>=4.8.0   # Video decoding/encoding and image resizing
 ultralytics>=8.1.0     # The fastest wrapper for YOLO models (supports v8-v12)
 supervision>=0.18.0    # Roboflow's library. Contains a pre-built ByteTrack implementation.
                        # WHY: Writing ByteTrack from scratch is error-prone. This is optimized.
+
+PyYAML>=6.0            # For parsing the config.yaml file
