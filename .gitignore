@@ -1,0 +1,6 @@
+input
+models
+venv
+output
+.env
+.vscode
