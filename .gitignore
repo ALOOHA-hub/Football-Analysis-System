@@ -7,3 +7,10 @@ training/yolo8x.pt
 data/input/*
 data/output/*
 models/*
+
+# 1. Python Artifacts (Junk)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
