@@ -14,8 +14,11 @@ def main():
 
     #Init Tracker
     tracker = Tracker(model_path)
-    tracker.get_object_tracks(frames)
+    tracks = tracker.get_object_tracks(frames)
+    print(tracks)
 
+    #save video with tracks
+    frames = tracker.draw_annotations(frames, tracks)
     save_video(frames, save_path)
     fps, width, height = get_video_properties(video_path)
     print(f'FPS: {fps}, Width: {width}, Height: {height}')
