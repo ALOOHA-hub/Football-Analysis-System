@@ -42,6 +42,15 @@ class TeamAssigner:
         self.team_colors[1] = kmeans.cluster_centers_[0]
         self.team_colors[2] = kmeans.cluster_centers_[1]
 
+        return self.team_colors
+
+    def assign_team_to_tracks(self, video_frames, tracks):
+        for frame_num, player_track in enumerate(tracks['players']):
+            for player_id, track_info in player_track.items():
+                team = self.get_player_team(video_frames[frame_num], track_info['bbox'], player_id)
+                tracks['players'][frame_num][player_id]['team'] = team
+                tracks['players'][frame_num][player_id]['team_color'] = self.team_colors[team]
+
 
 
 

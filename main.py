@@ -30,9 +30,12 @@ def main():
         # Cache the tracks for next time
         StubManager.save(tracks, stub_path)
 
-    # Step 3: Assign team colors (uses first frame to determine team clusters)
+    # Step 3: Assign team colors
     team_assigner = TeamAssigner()
     team_assigner.assign_team_color(frames[0], tracks["players"][0])
+
+    #3.1 Assign team to each player track in all frames
+    team_assigner.assign_team_to_tracks(frames, tracks)
 
     # Step 4: Annotate frames and save video
     annotator = Annotator()
