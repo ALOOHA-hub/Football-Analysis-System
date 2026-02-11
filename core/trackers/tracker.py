@@ -12,13 +12,8 @@ class Tracker:
     def __init__(self):
         self.tracker = sv.ByteTrack()
 
-    def get_object_tracks(self, detections, read_from_stub=False, stub_path=None):
+    def get_object_tracks(self, detections):
         
-        if read_from_stub and stub_path is not None and os.path.exists(stub_path):
-            with open(stub_path,'rb') as f:
-                tracks = pickle.load(f)
-            return tracks
-
         tracks = {
             "players": [],
             "referees": [],
@@ -34,7 +29,7 @@ class Tracker:
 
             #Convert goalKeeper to player because each goalkeaper is player and there is not enough data to train a model for goalKeeper
             for object_ind, class_id in enumerate(detection_supervision.class_id):
-                if cls_names[class_id] == "goalKeeper":
+                if cls_names[class_id] == "goalkeeper":
                     detection_supervision.class_id[object_ind] = cls_names_inv["player"]
             
             #Track objects
@@ -61,10 +56,6 @@ class Tracker:
 
                 if cls_id == cls_names_inv['ball']:
                     tracks["ball"][frame_num][1] = {"bbox": bbox}
-
-        if stub_path is not None:
-            with open(stub_path, 'wb') as f:
-                pickle.dump(tracks, f)
 
         return tracks
         

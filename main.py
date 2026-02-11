@@ -1,7 +1,10 @@
 from utils.video_utils import read_video, save_video, get_video_properties
 from utils.config_loader import cfg
+from utils.stub_manager import StubManager
 import os
+from core.detection import Detector
 from core.trackers import Tracker
+from core.annotation import Annotator
 
 def main():
     video_path = cfg['settings']['input_video_path']
@@ -11,14 +14,24 @@ def main():
 
     frames = read_video(video_path)
 
-    #Init Tracker
-    tracker = Tracker(model_path)
-        
-    tracks = tracker.get_object_tracks(frames,
-                                       read_from_stub=True,
-                                       stub_path=stub_path)
-    # Save video with tracks
-    frames = tracker.draw_annotations(frames, tracks)
+    # Try loading cached tracks first (skips detection + tracking entirely)
+    tracks = StubManager.load(stub_path)
+
+    if tracks is None:
+        # Step 1: Detect objects in frames
+        detector = Detector(model_path)
+        detections = detector.detect_frames(frames)
+
+        # Step 2: Track objects across frames
+        tracker = Tracker()
+        tracks = tracker.get_object_tracks(detections)
+
+        # Cache the tracks for next time
+        StubManager.save(tracks, stub_path)
+
+    # Step 3: Annotate frames and save video
+    annotator = Annotator()
+    frames = annotator.draw_annotations(frames, tracks)
     save_video(frames, save_path)
 
 if __name__ == "__main__":
