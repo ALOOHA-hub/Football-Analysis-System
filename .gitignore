@@ -6,7 +6,6 @@ training/football-players-detection-1
 training/yolo8x.pt
 data/input/*
 data/output/*
-models/*
 
 # 1. Python Artifacts (Junk)
 __pycache__/
