@@ -5,6 +5,7 @@ import os
 from core.detection import Detector
 from core.trackers import Tracker
 from core.annotation import Annotator
+from core.team_assignment import TeamAssigner
 
 def main():
     video_path = cfg['settings']['input_video_path']
@@ -29,9 +30,14 @@ def main():
         # Cache the tracks for next time
         StubManager.save(tracks, stub_path)
 
-    # Step 3: Annotate frames and save video
+    # Step 3: Assign team colors (uses first frame to determine team clusters)
+    team_assigner = TeamAssigner()
+    team_assigner.assign_team_color(frames[0], tracks["players"][0])
+
+    # Step 4: Annotate frames and save video
     annotator = Annotator()
     frames = annotator.draw_annotations(frames, tracks)
+
     save_video(frames, save_path)
 
 if __name__ == "__main__":

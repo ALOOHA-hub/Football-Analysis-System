@@ -12,3 +12,4 @@ supervision>=0.18.0    # Roboflow's library. Contains a pre-built ByteTrack impl
 PyYAML>=6.0            # For parsing the config.yaml file
 
 roboflow
+scikit-learn>=1.3.0   # For clustering algorithms
