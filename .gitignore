@@ -1,4 +1,5 @@
-models
+models/*
+!models/note.txt
 venv
 .env
 .vscode
