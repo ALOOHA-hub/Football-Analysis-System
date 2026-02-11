@@ -9,7 +9,7 @@ from ultralytics import YOLO
 
 
 class Tracker:
-    def __init__(self, model_path):
+    def __init__(self):
         self.tracker = sv.ByteTrack()
 
     def get_object_tracks(self, detections, read_from_stub=False, stub_path=None):
@@ -21,8 +21,8 @@ class Tracker:
 
         tracks = {
             "players": [],
-            "ball": [],
-            "Referees": []
+            "referees": [],
+            "ball": []
         }
 
         for frame_num, detection in enumerate(detections):
