@@ -1,5 +1,6 @@
 import cv2
 import os
+from constants import DEFAULT_FOURCC, DEFAULT_FPS
 
 def read_video(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -13,8 +14,8 @@ def read_video(video_path):
     return frames
 
 def save_video(frames, output_path):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, 20.0, (frames[0].shape[1], frames[0].shape[0]))
+    fourcc = cv2.VideoWriter_fourcc(*DEFAULT_FOURCC)
+    out = cv2.VideoWriter(output_path, fourcc, DEFAULT_FPS, (frames[0].shape[1], frames[0].shape[0]))
     for frame in frames:
         out.write(frame)
     out.release()

@@ -6,7 +6,7 @@ import cv2
 import sys 
 from utils.bbox_utils import get_center_of_bbox, get_bbox_width, get_foot_position
 from ultralytics import YOLO
-
+from constants import CLASS_PLAYER, CLASS_REFEREE, CLASS_BALL, CLASS_GOALKEEPER
 
 class Tracker:
     def __init__(self):
@@ -29,8 +29,8 @@ class Tracker:
 
             #Convert goalKeeper to player because each goalkeaper is player and there is not enough data to train a model for goalKeeper
             for object_ind, class_id in enumerate(detection_supervision.class_id):
-                if cls_names[class_id] == "goalkeeper":
-                    detection_supervision.class_id[object_ind] = cls_names_inv["player"]
+                if cls_names[class_id] == CLASS_GOALKEEPER:
+                    detection_supervision.class_id[object_ind] = cls_names_inv[CLASS_PLAYER]
             
             #Track objects
             detection_with_tracks = self.tracker.update_with_detections(detection_supervision)
@@ -44,17 +44,17 @@ class Tracker:
                 cls_id = frame_detection[3]
                 track_id = frame_detection[4]
 
-                if cls_id == cls_names_inv['player']:
+                if cls_id == cls_names_inv[CLASS_PLAYER]:
                     tracks["players"][frame_num][track_id] = {"bbox": bbox}
 
-                if cls_id == cls_names_inv['referee']:
+                if cls_id == cls_names_inv[CLASS_REFEREE]:
                     tracks["referees"][frame_num][track_id] = {"bbox": bbox}
 
             for frame_detection in detection_supervision:
                 bbox = frame_detection[0].tolist()
                 cls_id = frame_detection[3]
 
-                if cls_id == cls_names_inv['ball']:
+                if cls_id == cls_names_inv[CLASS_BALL]:
                     tracks["ball"][frame_num][1] = {"bbox": bbox}
 
         return tracks
@@ -66,7 +66,7 @@ class Tracker:
             for frame_num, track in enumerate(object_tracks):
                 for track_id, track_info in track.items():
                     bbox = track_info['bbox']
-                    if object == 'ball':
+                    if object == CLASS_BALL:
                         position = get_center_of_bbox(bbox)
                     else:
                         position = get_foot_position(bbox)

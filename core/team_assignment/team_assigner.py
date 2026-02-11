@@ -1,46 +1,50 @@
 from sklearn.cluster import KMeans
-
-
+from constants import (
+    KMEANS_CLUSTERS,
+    KMEANS_RANDOM_STATE,
+    KMEANS_N_INIT_FIT,
+    KMEANS_N_INIT_MODEL,
+    TEAM_ID_1,
+    TEAM_ID_2
+)
 
 class TeamAssigner:
     def __init__(self):
         self.team_colors = {} # store the color of each team
         self.player_team = {} # store the team of each player
+        self.kmeans = None
     
     def get_player_team(self, frame, player_bbox, player_id):
         if player_id in self.player_team:
             return self.player_team[player_id]
-        else:
-            player_color = self.get_player_color(frame, player_bbox)
-            self.player_team[player_id] = player_color
+        
+        player_color = self.get_player_color(frame, player_bbox)
 
-            team_id = self.kmeans.predict(player_color.reshape(1, -1))[0] + 1 #+1 just to make the team id 1 and 2 instead of 0 and 1 
-            self.player_team[player_id] = team_id
+        team_id = self.kmeans.predict(player_color.reshape(1, -1))[0] + 1
+        self.player_team[player_id] = team_id
 
-            return team_id
+        return team_id
 
-    def get_culstering_model(self, image):
+    def get_clustering_model(self, image):
         image_2d = image.reshape(-1, 3)
-        kmeans = KMeans(n_clusters=2, random_state=0, n_init=10)
+        kmeans = KMeans(n_clusters=KMEANS_CLUSTERS, random_state=KMEANS_RANDOM_STATE, n_init=KMEANS_N_INIT_MODEL)
         kmeans.fit(image_2d)
-
         return kmeans
 
     def assign_team_color(self, frame, player_detections):
-        
         player_colors = []
-        for _, player_detections in player_detections.items():
-            bbox = player_detections['bbox']
+        for _, player_track in player_detections.items():
+            bbox = player_track['bbox']
             player_color = self.get_player_color(frame, bbox)
             player_colors.append(player_color)
 
-        kmeans = KMeans(n_clusters=2, random_state=0, n_init=1)
+        kmeans = KMeans(n_clusters=KMEANS_CLUSTERS, random_state=KMEANS_RANDOM_STATE, n_init=KMEANS_N_INIT_FIT)
         kmeans.fit(player_colors)
 
         self.kmeans = kmeans
 
-        self.team_colors[1] = kmeans.cluster_centers_[0]
-        self.team_colors[2] = kmeans.cluster_centers_[1]
+        self.team_colors[TEAM_ID_1] = kmeans.cluster_centers_[0]
+        self.team_colors[TEAM_ID_2] = kmeans.cluster_centers_[1]
 
         return self.team_colors
 
@@ -51,19 +55,14 @@ class TeamAssigner:
                 tracks['players'][frame_num][player_id]['team'] = team
                 tracks['players'][frame_num][player_id]['team_color'] = self.team_colors[team]
 
-
-
-
-
-
     def get_player_color(self, frame, bbox):
         x1, y1, x2, y2 = bbox
         image = frame[int(y1):int(y2), int(x1):int(x2)]
 
         top_half_image = image[0:int(image.shape[0]/2), :]
 
-        #Get the clusters and labels for each pixel
-        kmeans = self.get_culstering_model(top_half_image)
+        # Get the clusters and labels for each pixel
+        kmeans = self.get_clustering_model(top_half_image)
         labels = kmeans.labels_
 
         clustered_image = labels.reshape(top_half_image.shape[0], top_half_image.shape[1])
@@ -74,9 +73,3 @@ class TeamAssigner:
         player_color = kmeans.cluster_centers_[player_cluster]
 
         return player_color
-
-        
-
-        
-
-    
