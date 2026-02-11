@@ -6,6 +6,7 @@ from core.detection import Detector
 from core.trackers import Tracker
 from core.annotation import Annotator
 from core.team_assignment import TeamAssigner
+from core.player_ball_assignment import PlayerBallAssigner
 
 def main():
     video_path = cfg['settings']['input_video_path']
@@ -36,6 +37,10 @@ def main():
 
     #3.1 Assign team to each player track in all frames
     team_assigner.assign_team_to_tracks(frames, tracks)
+
+    #3.2 Assign ball to player
+    player_ball_assigner = PlayerBallAssigner()
+    player_ball_assigner.assign_ball_to_players(tracks)
 
     # Step 4: Annotate frames and save video
     annotator = Annotator()
