@@ -4,3 +4,4 @@ settings:
   output_path: data/output
   confidence_threshold: 0.25
   iou_threshold: 0.7
+  stub_path: stubs/track_stubs.pkl
