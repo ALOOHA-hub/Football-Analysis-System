@@ -6,11 +6,22 @@ import cv2
 import sys 
 from utils.bbox_utils import get_center_of_bbox, get_bbox_width, get_foot_position
 from ultralytics import YOLO
-from constants import CLASS_PLAYER, CLASS_REFEREE, CLASS_BALL, CLASS_GOALKEEPER
+from constants import (
+    CLASS_PLAYER, 
+    CLASS_REFEREE, 
+    CLASS_BALL, 
+    CLASS_GOALKEEPER,
+    TRACKER_ACTIVATION_THRESHOLD,
+    TRACKER_LOST_BUFFER
+)
+import pandas as pd
 
 class Tracker:
     def __init__(self):
-        self.tracker = sv.ByteTrack()
+        self.tracker = sv.ByteTrack(
+            track_activation_threshold=TRACKER_ACTIVATION_THRESHOLD, 
+            lost_track_buffer=TRACKER_LOST_BUFFER
+        )
 
     def get_object_tracks(self, detections):
         
@@ -57,7 +68,22 @@ class Tracker:
                 if cls_id == cls_names_inv[CLASS_BALL]:
                     tracks["ball"][frame_num][1] = {"bbox": bbox}
 
+        # Interpolate Ball Positions
+        tracks["ball"] = self.interpolate_ball_positions(tracks["ball"])
+
         return tracks
+
+    def interpolate_ball_positions(self, ball_positions):
+        ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
+        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+        # Interpolate missing values
+        df_ball_positions = df_ball_positions.interpolate()
+        df_ball_positions = df_ball_positions.bfill()
+
+        ball_positions = [{1: {"bbox": x}} for x in df_ball_positions.to_numpy().tolist()]
+
+        return ball_positions
         
     @staticmethod
     def add_position_to_tracks(tracks):
