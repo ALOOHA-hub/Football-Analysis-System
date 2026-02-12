@@ -7,6 +7,7 @@ from core.trackers import Tracker
 from core.annotation import Annotator
 from core.team_assignment import TeamAssigner
 from core.player_ball_assignment import PlayerBallAssigner
+from core.team_ball_control import TeamBallControl
 
 def main():
     video_path = cfg['settings']['input_video_path']
@@ -41,10 +42,14 @@ def main():
     #3.2 Assign ball to player
     player_ball_assigner = PlayerBallAssigner()
     player_ball_assigner.assign_ball_to_players(tracks)
+    
+    #3.3 Assign Team Ball Control
+    team_ball_control = []
+    team_ball_control = TeamBallControl.calculate_team_ball_control(tracks)
 
     # Step 4: Annotate frames and save video
     annotator = Annotator()
-    frames = annotator.draw_annotations(frames, tracks)
+    frames = annotator.draw_annotations(frames, tracks, team_ball_control)
 
     save_video(frames, save_path)
 
