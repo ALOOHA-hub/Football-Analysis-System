@@ -28,7 +28,8 @@ class Tracker:
         tracks = {
             "players": [],
             "referees": [],
-            "ball": []
+            "ball": [],
+            "goalkeepers": []
         }
 
         for frame_num, detection in enumerate(detections):
@@ -38,10 +39,10 @@ class Tracker:
             #Convert from the ultralytics format to the supervision format
             detection_supervision = sv.Detections.from_ultralytics(detection)
 
-            #Convert goalKeeper to player because each goalkeaper is player and there is not enough data to train a model for goalKeeper
-            for object_ind, class_id in enumerate(detection_supervision.class_id):
-                if cls_names[class_id] == CLASS_GOALKEEPER:
-                    detection_supervision.class_id[object_ind] = cls_names_inv[CLASS_PLAYER]
+            #Convert from the ultralytics format to the supervision format
+            detection_supervision = sv.Detections.from_ultralytics(detection)
+
+            #Track objects
             
             #Track objects
             detection_with_tracks = self.tracker.update_with_detections(detection_supervision)
@@ -49,6 +50,7 @@ class Tracker:
             tracks["players"].append({})
             tracks["referees"].append({})
             tracks["ball"].append({})
+            tracks["goalkeeper"].append({})
             
             for frame_detection in detection_with_tracks:
                 bbox = frame_detection[0].tolist()
@@ -60,6 +62,9 @@ class Tracker:
 
                 if cls_id == cls_names_inv[CLASS_REFEREE]:
                     tracks["referees"][frame_num][track_id] = {"bbox": bbox}
+                
+                if cls_id == cls_names_inv[CLASS_GOALKEEPER]:
+                    tracks["goalkeeper"][frame_num][track_id] = {"bbox": bbox}
 
             for frame_detection in detection_supervision:
                 bbox = frame_detection[0].tolist()
@@ -72,18 +77,6 @@ class Tracker:
         tracks["ball"] = self.interpolate_ball_positions(tracks["ball"])
 
         return tracks
-
-    # def interpolate_ball_positions(self, ball_positions):
-    #     ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
-    #     df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
-
-    #     # Interpolate missing values
-    #     df_ball_positions = df_ball_positions.interpolate()
-    #     df_ball_positions = df_ball_positions.bfill()
-
-    #     ball_positions = [{1: {"bbox": x}} for x in df_ball_positions.to_numpy().tolist()]
-
-    #     return ball_positions
     
     def interpolate_ball_positions(self, ball_positions):
         # 1. Convert to DataFrame with NaNs for missing frames

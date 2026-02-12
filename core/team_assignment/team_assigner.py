@@ -14,13 +14,16 @@ class TeamAssigner:
         self.player_team = {} # store the team of each player
         self.kmeans = None
     
+    
     def get_player_team(self, frame, player_bbox, player_id):
         if player_id in self.player_team:
             return self.player_team[player_id]
         
         player_color = self.get_player_color(frame, player_bbox)
 
-        team_id = self.kmeans.predict(player_color.reshape(1, -1))[0] + 1
+        predicted_label = self.kmeans.predict(player_color.reshape(1, -1))[0]
+        team_id = self.center_to_team_id_map[predicted_label]
+
         self.player_team[player_id] = team_id
 
         return team_id
@@ -43,8 +46,42 @@ class TeamAssigner:
 
         self.kmeans = kmeans
 
-        self.team_colors[TEAM_ID_1] = kmeans.cluster_centers_[0]
-        self.team_colors[TEAM_ID_2] = kmeans.cluster_centers_[1]
+        # Sort clusters by intensity (grayscale value) to ensure consistency (0=Darker, 1=Lighter)
+        # Assuming Team 1 is the 'Lighter' team (e.g. White) and Team 2 is 'Darker' (e.g. Green)
+        # Or vice versa. Sorting ensures determinism.
+        
+        centers = kmeans.cluster_centers_
+        # Calculate intensity (mean of R,G,B)
+        intensities = centers.mean(axis=1)
+        
+        # Sort indices: [index_of_darker, index_of_lighter]
+        sorted_indices = intensities.argsort()
+
+        # Assign sorted centers
+        self.team_colors[TEAM_ID_1] = centers[sorted_indices[0]] # Darker/Team 1 (Green?)
+        self.team_colors[TEAM_ID_2] = centers[sorted_indices[1]] # Lighter/Team 2 (White?)
+
+        # We also need to map the KMEANS LABELS to these IDs.
+        # But `predict` returns 0 or 1.
+        # If we sorted the centers, we need to know which label (0 or 1) corresponds to which Sorted ID.
+        # This requires overriding the predict logic or updating `player_team` map logic.
+        # Actually easier: Just assign the colors to IDs here.
+        # BUT `get_player_team` uses `kmeans.predict`.
+        # `predict` returns the index of the closest center in `cluster_centers_`.
+        # The `cluster_centers_` are NOT sorted by KMeans. They are as fitted.
+        # So we just need to know: Is label 0 the darker one or lighter one?
+        
+        self.center_to_team_id_map = {}
+        if sorted_indices[0] == 0: # Cluster 0 is darker
+             # Map Cluster 0 -> Team 1 (Darker), Cluster 1 -> Team 2 (Lighter)
+             self.center_to_team_id_map[0] = TEAM_ID_1
+             self.center_to_team_id_map[1] = TEAM_ID_2
+        else: # Cluster 1 is darker
+             # Map Cluster 1 -> Team 1 (Darker), Cluster 0 -> Team 2 (Lighter)
+             self.center_to_team_id_map[1] = TEAM_ID_1
+             self.center_to_team_id_map[0] = TEAM_ID_2
+
+
 
         return self.team_colors
 
