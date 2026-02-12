@@ -73,18 +73,75 @@ class Tracker:
 
         return tracks
 
+    # def interpolate_ball_positions(self, ball_positions):
+    #     ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
+    #     df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+    #     # Interpolate missing values
+    #     df_ball_positions = df_ball_positions.interpolate()
+    #     df_ball_positions = df_ball_positions.bfill()
+
+    #     ball_positions = [{1: {"bbox": x}} for x in df_ball_positions.to_numpy().tolist()]
+
+    #     return ball_positions
+    
     def interpolate_ball_positions(self, ball_positions):
-        ball_positions = [x.get(1, {}).get('bbox', []) for x in ball_positions]
-        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1', 'y1', 'x2', 'y2'])
-
-        # Interpolate missing values
-        df_ball_positions = df_ball_positions.interpolate()
-        df_ball_positions = df_ball_positions.bfill()
-
-        ball_positions = [{1: {"bbox": x}} for x in df_ball_positions.to_numpy().tolist()]
-
-        return ball_positions
+        # 1. Convert to DataFrame with NaNs for missing frames
+        # Replace [] with [NaN, NaN, NaN, NaN] so pandas understands missing data
+        processed_positions = []
+        for x in ball_positions:
+            bbox = x.get(1, {}).get('bbox', [])
+            if not bbox:
+                processed_positions.append([np.nan, np.nan, np.nan, np.nan])
+            else:
+                processed_positions.append(bbox)
         
+        df_ball_positions = pd.DataFrame(processed_positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+        # 2. Filter False Positives (Sudden "Teleportation")
+        # If the ball moves > 100 pixels in 1 frame, it's likely a false detection (e.g., a shoe)
+        df_ball_positions['center_x'] = (df_ball_positions['x1'] + df_ball_positions['x2']) / 2
+        df_ball_positions['center_y'] = (df_ball_positions['y1'] + df_ball_positions['y2']) / 2
+        
+        # Calculate displacement from previous valid frame
+        df_ball_positions['dist'] = np.sqrt(
+            df_ball_positions['center_x'].diff()**2 + df_ball_positions['center_y'].diff()**2
+        )
+        
+        # Mark detections with impossible speed as NaN (Threshold: 100px per frame)
+        # You can adjust this threshold based on your video resolution
+        MAX_PIXEL_MOVE_PER_FRAME = 100 
+        outliers = df_ball_positions['dist'] > MAX_PIXEL_MOVE_PER_FRAME
+        df_ball_positions.loc[outliers, ['x1', 'y1', 'x2', 'y2']] = np.nan
+
+        # 3. Interpolate with a Limit
+        # limit=20 means we only fill gaps of up to 20 frames (~0.6 seconds at 30fps).
+        # Larger gaps are left empty because the ball is likely out of play.
+        df_ball_positions = df_ball_positions.interpolate(method='linear', limit=20, limit_direction='both')
+
+        # 4. Smooth the path (Rolling Average)
+        # This removes the "shaking" effect of bounding boxes
+        df_ball_positions[['x1', 'y1', 'x2', 'y2']] = (
+            df_ball_positions[['x1', 'y1', 'x2', 'y2']]
+            .rolling(window=5, min_periods=1, center=True)
+            .mean()
+        )
+
+        # 5. Fill remaining NaNs (edges) cautiously
+        # bfill only if we are confident, otherwise leave as is to avoid drawing ball at (0,0) or corners
+        df_ball_positions = df_ball_positions.bfill(limit=5)
+
+        # Convert back to original format
+        # If a row is still NaN (because gap was too large), we return an empty dict {} 
+        final_positions = []
+        for row in df_ball_positions.to_numpy():
+            if np.isnan(row[0]):
+                final_positions.append({}) # No ball in this frame
+            else:
+                final_positions.append({1: {"bbox": row[:4].tolist()}})
+
+        return final_positions
+
     @staticmethod
     def add_position_to_tracks(tracks):
         from utils.bbox_utils import get_center_of_bbox, get_foot_position
