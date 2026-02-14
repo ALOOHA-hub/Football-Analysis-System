@@ -8,6 +8,7 @@ from core.annotation import Annotator
 from core.team_assignment import TeamAssigner
 from core.player_ball_assignment import PlayerBallAssigner
 from core.team_ball_control import TeamBallControl
+from core.speed_estimation import SpeedEstimator
 
 def main():
     video_path = cfg['settings']['input_video_path']
@@ -43,9 +44,16 @@ def main():
     player_ball_assigner = PlayerBallAssigner()
     player_ball_assigner.assign_ball_to_players(tracks)
     
+    # Assign Position to Tracks (Needed for Speed Estimation and Ball Control)
+    Tracker.add_position_to_tracks(tracks)
+    
     #3.3 Assign Team Ball Control
     team_ball_control = []
     team_ball_control = TeamBallControl.calculate_team_ball_control(tracks)
+
+    #3.4 Calculate Speed and Distance
+    speed_estimator = SpeedEstimator()
+    speed_estimator.speed_and_distance_to_tracks(tracks)
 
     # Step 4: Annotate frames and save video
     annotator = Annotator()

@@ -26,8 +26,15 @@ class Annotator:
             for track_id, player in player_dict.items():
                 color = player.get("team_color", PLAYER_DEFAULT_COLOR)
                 frame = self.entity_annotator.draw_ellipse(frame, player["bbox"], color, track_id)
+                
                 if player.get('has_ball', False):
                     frame = self.entity_annotator.draw_triangle(frame, player["bbox"], BALL_POSSESSION_COLOR)
+                
+                # Draw Speed and Distance
+                speed = player.get('speed')
+                distance = player.get('distance')
+                if speed is not None or distance is not None:
+                    frame = self.entity_annotator.draw_player_speed_and_distance(frame, player["bbox"], speed, distance)
             
             # Draw Referee
             for _, referee in referee_dict.items():

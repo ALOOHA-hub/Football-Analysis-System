@@ -76,3 +76,32 @@ class EntityAnnotator:
         cv2.drawContours(frame, [triangle_points], 0, color, cv2.FILLED)
         cv2.drawContours(frame, [triangle_points], 0, TEXT_COLOR, 2)
         return frame
+    def draw_player_speed_and_distance(self, frame, bbox, speed, distance):
+        y2 = int(bbox[3])
+        x_center, _ = get_center_of_bbox(bbox)
+        
+        # Draw Speed
+        if speed is not None:
+            cv2.putText(
+                frame,
+                f"{speed:.1f} km/h",
+                (int(x_center) - 40, int(y2) + 60), 
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                TEXT_COLOR,
+                2
+            )
+        
+        # Draw Distance
+        if distance is not None:
+            cv2.putText(
+                frame,
+                f"{distance:.1f} m",
+                (int(x_center) - 40, int(y2) + 80), 
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                TEXT_COLOR,
+                2
+            )
+        
+        return frame
